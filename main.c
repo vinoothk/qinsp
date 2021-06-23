@@ -6,6 +6,8 @@
 #include <gsl/gsl_blas.h>
 #include "vose_algo.c"
 #include <time.h>
+#include<gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 double frobeniusNorm(const gsl_matrix *matrix, int size1, int size2)
 {
@@ -24,9 +26,13 @@ double frobeniusNorm(const gsl_matrix *matrix, int size1, int size2)
    //  printf("fffff norm %f",result);
     return sqrt(result);
 }
-void sample_C(const gsl_matrix *matrix, int m, int n,int r, double row_norms[], double LS_prob_rows[], double LS_prob_columns[500][250],double A_Frobenius)
+void sample_C(const gsl_matrix *matrix, int m, int n,int r,int c, double row_norms[], double LS_prob_rows[], double LS_prob_columns[500][250],double A_Frobenius)
 {
-  int  *indices = malloc(sizeof(int)*r);
+  int  *rows = malloc(sizeof(int)*r);
+  int a[1];int rng_choose;
+  // const gsl_rng_type * T;
+  // gsl_rng * rg;
+  gsl_rng * rg = gsl_rng_alloc (gsl_rng_taus);
   for(int i = 0; i < m; ++i)
     {
         for(int j = 0; j < n; ++j)
@@ -42,29 +48,27 @@ void sample_C(const gsl_matrix *matrix, int m, int n,int r, double row_norms[], 
     }  
     // for(int i=0;i<m;i++)
     // {
-
+    // Testing
     //   // LS_prob_rows[i] = row_norms[i] / pow(A_Frobenius, 2);
     //   printf("%f\n",LS_prob_rows[i]);
       
     // }
-    indices = vose(LS_prob_rows,m,r);
+    rows = vose(LS_prob_rows,m,r);
 
-    for(int i=0;i<r;i++)
+    for(int i=0;i<c;i++)
     {
-
-      // LS_prob_rows[i] = row_norms[i] / pow(A_Frobenius, 2);
-      printf("indices%d\n",indices[i]);
-      
+     rng_choose = gsl_ran_choose (rg, a, 1, rows,m, sizeof (int));
+     printf("%d",a[0]);
     }
 
-    
+    // printf("rng choose%d",rng_choose);
 
 }
 int main()
 {
 //    char buffer[4096*] ;
    int m = 500, n =250;
-   int r = 5;
+   int r = 4,c = 10;
    char *record;
    double A_Frobenius;
    double row_norms[m];
@@ -139,6 +143,6 @@ int main()
       }
       // printf("\n");
     }
-    sample_C(a,m,n,r,row_norms,LS_prob_rows,LS_prob_columns,A_Frobenius);
+    sample_C(a,m,n,r,c,row_norms,LS_prob_rows,LS_prob_columns,A_Frobenius);
    return 0 ;
  }
