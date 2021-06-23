@@ -35,26 +35,31 @@ def ls_probs(m, n, A):
     for i in range(m):
         row_norms[i] = np.abs(la.norm(A[i, :]))**2
     ##########VIN############
-    print("row norms of A: ",row_norms)
+    # print("row norms of A: ",row_norms)7/*258
+    
     # Frobenius norm of A
     
     
     A_Frobenius = np.sqrt(np.sum(row_norms))
-    print("frobenius norm", A_Frobenius)
+    # print("frobenius norm", A_Frobenius)
 
     LS_prob_rows = np.zeros(m)
 
     # normalized length-square row probability distribution
     for i in range(m):
         LS_prob_rows[i] = row_norms[i] / A_Frobenius**2
-
+    # print("LS_probrows",LS_prob_rows)
     LS_prob_columns = np.zeros((m, n))
 
     # populates array with length-square column probability distributions
     # LS_prob_columns[i]: LS probability distribution for selecting columns from row A[i]
     for i in range(m):
         LS_prob_columns[i, :] = [np.abs(k)**2 / row_norms[i] for k in A[i, :]]
-
+        # break;
+    # print(len((LS_prob_columns)))
+    r=5
+    c=5
+    sample_C(A,m,n,r,c,row_norms,LS_prob_rows,LS_prob_columns,A_Frobenius)
     return row_norms, LS_prob_rows, LS_prob_columns, A_Frobenius
 
 
@@ -80,7 +85,7 @@ def sample_C(A, m, n, r, c, row_norms, LS_prob_rows, LS_prob_columns, A_Frobeniu
     tic = time.time()
     # sample row indices from row length_square distribution
     rows = np.random.choice(m, r, replace=True, p=LS_prob_rows)
-
+    print("Random rows ",rows)
     columns = np.zeros(c, dtype=int)
     # sample column indices
     for j in range(c):
@@ -854,9 +859,8 @@ def linear_eqs_fkv(A, b, r, c, rank):
 
 ################VIN####################
 
-a_data = np.array([[0.18, 0.60, 0.57, 0.96],[
-                      0.41, 0.24, 0.99, 0.58],
-                      [0.14, 0.30, 0.97, 0.66],
-                      [0.51, 0.13, 0.19, 0.85 ]])
+A = np.load('A.npy')
 
-ls_probs(4,4,a_data)
+ls_probs(500,250,A)
+r = 200
+c = 200
