@@ -122,7 +122,7 @@ void prepare_vose(double *probabilities, int length, int *alias, double *prob) {
 	while(small!=NULL){
 		l = pop(&small);
 		prob[l]=1;
-		printf("l %d\n",l);
+		// printf("l %d\n",l);
 	}
 
 }

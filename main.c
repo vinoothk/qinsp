@@ -8,6 +8,8 @@
 #include <time.h>
 #include<gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <time.h>
+
 
 double frobeniusNorm(const gsl_matrix *matrix, int size1, int size2)
 {
@@ -30,6 +32,10 @@ void sample_C(const gsl_matrix *matrix, int m, int n,int r,int c, double row_nor
 {
   int  *rows = malloc(sizeof(int)*r);
   int a[1];int rng_choose;
+  int *columns_tmp =  malloc(sizeof(int)*1);
+  int columns[c];
+  clock_t start, end;
+  double rt_sampling_C;
   // const gsl_rng_type * T;
   // gsl_rng * rg;
   gsl_rng * rg = gsl_rng_alloc (gsl_rng_taus);
@@ -37,6 +43,7 @@ void sample_C(const gsl_matrix *matrix, int m, int n,int r,int c, double row_nor
     {
         for(int j = 0; j < n; ++j)
         {
+            //Testing
             double value = (gsl_matrix_get(matrix,i,j));
             // printf("%f \n",gsl_matrix_get(matrix,i,j));
             // printf("Vinooth");
@@ -53,22 +60,35 @@ void sample_C(const gsl_matrix *matrix, int m, int n,int r,int c, double row_nor
     //   printf("%f\n",LS_prob_rows[i]);
       
     // }
+    start = clock();
     rows = vose(LS_prob_rows,m,r);
 
     for(int i=0;i<c;i++)
     {
-     rng_choose = gsl_ran_choose (rg, a, 1, rows,m, sizeof (int));
-     printf("%d",a[0]);
+     gsl_ran_choose (rg, a, 1, rows,m, sizeof (int));
+    //  printf("%d\n",a[0]);
+    //  for(j=0;j<n;j++)
+    //  {
+    //    LS_prob_columns_tmp[j] = 
+    //  }
+     columns_tmp = vose(LS_prob_columns[a[0]],n,1);
+     columns[i] = columns_tmp[0];
+    //  printf("%d\n",columns[i]);
     }
-
-    // printf("rng choose%d",rng_choose);
-
+    end = clock();
+    rt_sampling_C = ((double) (end - start)) / CLOCKS_PER_SEC;
+  // for(int j=0;j<c;j++)
+  //    {
+  //      printf("columns %d \t s%f\n",columns[j],LS_prob_columns[a[0]][j]);
+  //    }
+    
+  printf("time elapsed %f",rt_sampling_C );
 }
 int main()
 {
 //    char buffer[4096*] ;
    int m = 500, n =250;
-   int r = 4,c = 10;
+   int r = 200,c = 200;
    char *record;
    double A_Frobenius;
    double row_norms[m];
