@@ -32,15 +32,21 @@ double frobeniusNorm(const gsl_matrix *matrix, int size1, int size2)
 void sample_C(const gsl_matrix *A, int m, int n,int r,int c, double row_norms[], gsl_vector *LS_prob_rows, const gsl_matrix *LS_prob_columns,double A_Frobenius)
 {
     int  *rows = malloc(sizeof(int)*r);
-    double *R_row = malloc(sizeof(double)*n);
+    // double *R_row = malloc(sizeof(double)*n);
     int a[1];
     int *columns_tmp =  malloc(sizeof(int)*1);
     int columns[c];
     clock_t start, end;
     double rt_sampling_C;
+    double tmp;
     gsl_vector *v = gsl_vector_alloc(n);
-
+    gsl_vector *R_row = gsl_vector_alloc(n);
+    gsl_matrix *R_C = gsl_matrix_alloc (r, c);
+    gsl_vector *vtmp = gsl_vector_alloc(c);
+    gsl_vector *column_norms = gsl_vector_alloc(c);
     
+    double R_row_norm;
+    gsl_matrix *LS_prob_columns_R = gsl_matrix_alloc (r, n);
     // const gsl_rng_type * T;
     // gsl_rng * rg;
     gsl_rng * rg = gsl_rng_alloc (gsl_rng_taus);  
@@ -53,7 +59,8 @@ void sample_C(const gsl_matrix *A, int m, int n,int r,int c, double row_norms[],
     // }
     // exit(0);
     
-    
+    // end = clock();
+    // rt_sampling_C = ((double) (end - start)) / CLOCKS_PER_SEC;
     for(int i=0;i<c;i++)
     {
      gsl_ran_choose (rg, a, 1, rows,r, sizeof (int));
@@ -62,35 +69,72 @@ void sample_C(const gsl_matrix *A, int m, int n,int r,int c, double row_norms[],
     //  printf("%d aaaaaaa-\t -- \n",a[0]);
         // printf("%f\n",LS_prob_columns[a[0]][i]); 
      columns[i] = columns_tmp[0];
+    //  printf("%d\n",columns[i]);
     }
     // exit(0);
     end = clock();
     rt_sampling_C = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("time elapsed %f",rt_sampling_C );
-    // R_row = np.zeros(n)
-    // LS_prob_columns_R = np.zeros((r, n))
-    // for s in range(r):
-    //     R_row[:] = A[rows[s], :] * A_Frobenius / (np.sqrt(r) * np.sqrt(row_norms[rows[s]]))
-    //     R_row_norm = np.abs(la.norm(R_row[:]))**2
-    //     LS_prob_columns_R[s, :] = [np.abs(k)**2 / R_row_norm for k in R_row[:]]
-    
+   
     for(int s=0; s < r;s++)
     {
-      double tmp;
-      tmp = sqrt(r) * sqrt(row_norms[rows[s]]);
-      for (int i=0; i<n; i++)
-      {
-        R_row[i] = gsl_matrix_get(A,s,i) * A_Frobenius / tmp ;
-         
-      }
+      
+      tmp = A_Frobenius/ sqrt(r) * sqrt(row_norms[rows[s]]);
+      gsl_matrix_get_row(R_row,A,rows[s]);
+      gsl_vector_scale(R_row,tmp);
+      
+      
+      R_row_norm = pow(gsl_blas_dnrm2(R_row),2);
+      printf("%f\n",R_row_norm);
+      gsl_vector_mul(R_row,R_row);
+      gsl_vector_scale(R_row,1/R_row_norm);
+      gsl_matrix_set_row(LS_prob_columns_R,s,R_row);
     }
-    // printf("R_row\n%ld",sizeof(R_row));
+    for(int s=0;s<r;s++)
+    {
+      for(int t=0;t<c;t++)
+      {
+        gsl_matrix_set(R_C,s,t,gsl_matrix_get(A,rows[s],columns[t]));
+        
+      }
+      tmp = A_Frobenius/ sqrt(r) * sqrt(row_norms[rows[s]]);
+      // R_C[s,:] = R_C[s,:] * s
+      gsl_matrix_get_row(vtmp,R_C,s);
+
+      gsl_vector_scale(vtmp,tmp);
+      gsl_matrix_set_row(R_C,s,vtmp);
+      
+    }
+    // for(int s=0;s<r;s++)
+    // {
+    //   for(int t=0;t<c;t++)
+    //   {
+    //     printf("%f\n",gsl_matrix_get(R_C,s,t));
+    //    }
+    //   }
+
+
+    gsl_vector_set_zero(column_norms);
+    for(int t=0;t<c;t++)
+    {
+      for(int s=0;s<r;s++)
+      {
+        // column_norms[t] += np.abs(R_C[s, t])**2
+        pow(gsl_matrix_get(R_C,t,s),2);
+        gsl_vector_set(column_norms,t,gsl_vector_get(column_norms,t) +pow(gsl_matrix_get(R_C,t,s),2));                                                            
+      }
+
+    }
+    //   for(int s=0; s < c;s++)
+    // {
+    //   printf(" column_norms%f\n",gsl_vector_get(column_norms,s));
+    // }
 }
 int main()
 {
 //    char buffer[4096*] ;
    int m = 472, n =472;//610, 9724
-   int r = 250,c = 250;
+   int r = 400,c = 400;
    char *record;
    double A_Frobenius;
    double row_norms[m];
@@ -146,7 +190,7 @@ int main()
       gsl_matrix_get_row(v,a,i);
       row_norms[i] = pow(gsl_blas_dnrm2(v), 2 );
 
-      printf("%f\n",row_norms[i]);
+      // printf("%f\n",row_norms[i]);
 
    }
   // exit(0);
@@ -157,7 +201,7 @@ int main()
 
       LS_prob_row_tmp = row_norms[i] / pow(A_Frobenius, 2);
       gsl_vector_set(LS_prob_rows,i,LS_prob_row_tmp);
-      // printf("%f\n",LS_prob_rows[i]);
+      // printf("%f\n",gsl_vector_get(LS_prob_rows,i));
       
     }
     // exit(0);
