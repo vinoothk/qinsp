@@ -67,6 +67,36 @@ void linear_eqs(const gsl_matrix *A, const gsl_vector *b, int m, int n, int r, i
       uvl_vector(l, A, r, w, rows, sigma, row_norms, A_Frobenius);
     }
 
+
+
+}
+void sample_me_lsyst(const gsl_matrix *A, const gsl_vector* b, int m, int n, int samples, int rank, int r, gsl_vector *w, int *rows, gsl_vector *sigma, double row_norms[], gsl_vector *LS_prob_rows, const gsl_matrix *LS_prob_columns, double A_Frobenius)
+{
+  int reps = 10
+
+    for(int i=0; i<reps; i++)
+    {
+      for(int l=0; l<rank; l++)
+      {
+        gsl_vector *X = gsl_vector_alloc(samples);
+        gsl_vector_set_zero(X);
+
+        for(int k=0; k<samples; 
+        {
+          int *sample_i;
+          gsl_vector *vtmp = gsl_vector_alloc(n);
+
+            # sample row index from length-square distribution
+            sample_i = np.random.choice(m, 1, replace=True, p=LS_prob_rows)[0]
+            sample_i = vose(LS_prob_rows,m,1);
+                # sample column index from length-square distribution from previously sampled row
+            sample_j = np.random.choice(n, 1, p=LS_prob_columns[sample_i])[0]
+            gsl_matrix_get_row(vtmp,LS_prob_columns,*sample_i);
+            sample_j = vose(LS_prob_columns,n,1);
+        }
+      }
+    }
+
 }
 
 void uvl_vector(int m, int n, int l, const gsl_matrix* A, int r, gsl_vector *w, int *rows, gsl_vector *sigma, double row_norms[], A_Frobenius, gsl_vector *u_approx, gsl_vector *v_approx)
@@ -85,15 +115,14 @@ void uvl_vector(int m, int n, int l, const gsl_matrix* A, int r, gsl_vector *w, 
       gsl_matrix_get_row(tmp_vector,A,rows[s]);
       tmp_val = np.sqrt(row_norms[rows[s]]) ) * gsl_matrix_get(w,s,l);
       gsl_vector_scale(tmp_vector,tmp_val);
+      gsl_vector_add(v_approx,tmp_vector);
 
-      gsl_vector_set(gsl_vector_get(v_approx,s) + gsl_vector_get(tmp_vector,s));
     }
+    gsl_vector_scale(v_approx,factor);
     
-    v_approx[:] = v_approx[:] * factor
+    dgemm('N', 'N', 1, A, v_approx, 0.0, u_approx);
 
-    u_approx = (A @ v_approx) / sigma[l]
-
-    return u_approx, v_approx
+    gsl_vector_scale(u_approx, 1/gsl_vector_get(sigma,l));
 
 
 }
