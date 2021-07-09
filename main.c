@@ -42,6 +42,7 @@ void linear_eqs(const gsl_matrix *A, const gsl_vector *b, int m, int n, int r, i
     gsl_matrix *C = gsl_matrix_alloc(r,c);
     gsl_vector *u_approx = gsl_vector_alloc(m);
     gsl_vector *v_approx = gsl_vector_alloc(n);
+    double *lambdas = (int *)calloc(rank, sizeof(double));
     
     # 1- Generating LS probability distributions to sample from matrix A
     tic = time.time()
@@ -72,13 +73,24 @@ void linear_eqs(const gsl_matrix *A, const gsl_vector *b, int m, int n, int r, i
 }
 void sample_me_lsyst(const gsl_matrix *A, const gsl_vector* b, int m, int n, int samples, int rank, int r, gsl_vector *w, int *rows, gsl_vector *sigma, double row_norms[], gsl_vector *LS_prob_rows, const gsl_matrix *LS_prob_columns, double A_Frobenius)
 {
-  int reps = 10
+  int reps = 10;
+  int 
+  if(reps % 2 == 0)
+  {
+    m = reps / 2;
+  }
+  else
+  {
+    m = reps / 2;
+  }
+  gsl_matrix *matrix_elements = gsl_matrix_alloc(reps,rank);
 
     for(int i=0; i<reps; i++)
     {
       for(int l=0; l<rank; l++)
       {
         gsl_vector *X = gsl_vector_alloc(samples);
+        
         gsl_vector_set_zero(X);
 
         for(int k=0; k<samples; 
@@ -86,18 +98,57 @@ void sample_me_lsyst(const gsl_matrix *A, const gsl_vector* b, int m, int n, int
           int *sample_i;
           gsl_vector *vtmp = gsl_vector_alloc(n);
 
-            # sample row index from length-square distribution
-            sample_i = np.random.choice(m, 1, replace=True, p=LS_prob_rows)[0]
             sample_i = vose(LS_prob_rows,m,1);
-                # sample column index from length-square distribution from previously sampled row
-            sample_j = np.random.choice(n, 1, p=LS_prob_columns[sample_i])[0]
+            
             gsl_matrix_get_row(vtmp,LS_prob_columns,*sample_i);
+            
             sample_j = vose(LS_prob_columns,n,1);
+
+            # calculates v_j
+            
+            int v_j = 0; 
+            
+            for (int s=0; s<r; s++)
+            {
+              v_j+= gsl_matrix_get(rows[s],sample_j) * gsl_matrix_get(w,s,l) / (sqrt(row_norms[rows[s]]);
+
+            }
+
+            v_j = v_j * A_Frobenius / (sqrt(r) * gsl_vector_get(sigma,l));
+            
+            X[k] = ((A_Frobenius ** 2 * b[sample_i]) / (A[sample_i, sample_j])) * v_j
+            
+            double tmp = pow(A_Frobenius,2) * gsl_vector_get(b,sample_i) / gsl_matrix_get(sample_i,sample_j) * v_j;
+            
+            gsl_vector_set(X,k,tmp);
         }
+
+        gsl_matrix_set(matrix_elements,i,l,(gsl_vector_sum(X)/samples));
+
       }
     }
 
+    # take median of all repeated estimates
+
+
+    
+    double tmp1;
+    gsl_vector *vtmp = gsl_vector_alloc(reps);
+    for (int l=0; l<rank; l++)
+    {
+      gsl_stats_median(lambdas,1,rank); 
+      gsl_matrix_get_column(vtmp,matrix_elements,l);
+      gsl_sort_vector(vtmp);
+      if(m==0)
+        lambdas[l] = gsl_vector_get(vtmp,reps/2);
+      else 
+        lambdas[l] = (gsl_vector_get(vtmp,reps+1/2) + gsl_vector_get(vtmp,reps-1/2))/2;
+    }
+
 }
+
+
+
 
 void uvl_vector(int m, int n, int l, const gsl_matrix* A, int r, gsl_vector *w, int *rows, gsl_vector *sigma, double row_norms[], A_Frobenius, gsl_vector *u_approx, gsl_vector *v_approx)
 {
