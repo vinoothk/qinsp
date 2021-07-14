@@ -10,9 +10,13 @@
 #include <gsl/gsl_randist.h>
 #include <time.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_sf_bessel.h>
+#include <gsl/gsl_statistics.h>
+#include <gsl/gsl_sort_vector.h>
+#include <gsl/gsl_vector.h>
 
 double frobeniusNorm(const gsl_matrix *matrix, int size1, int size2)
-{
+{ 
   double result = 0.0;
   for (int i = 0; i < size1; ++i)
   {
@@ -30,132 +34,25 @@ double frobeniusNorm(const gsl_matrix *matrix, int size1, int size2)
 // {
 
 // }
-void linear_eqs(const gsl_matrix *A, const gsl_vector *b, int m, int n, int r, int c, int rank, int Nsamples, int NcompX, double row_norms[], gsl_vector *LS_prob_rows, const gsl_matrix *LS_prob_columns, double A_Frobenius,comp)
-{
-  // m_rows, n_cols = np.shape(A)
-  int *rows = malloc(sizeof(int) * r);
-  gsl_vector *sigma = gsl_vector_alloc(c);
-  gsl_matrix *vh = gsl_matrix_alloc(c, c);
-  gsl_matrix *w = gsl_matrix_alloc(r, c);
-  gsl_vector *u_approx = gsl_vector_alloc(m);
-  gsl_vector *v_approx = gsl_vector_alloc(n);
-  double *lambdas = (int *)calloc(rank, sizeof(double));
-  clock_t start, end;
-  double rt_ls_prob;
-  int sample_return_from_x[2];
-# 1 - Generating LS probability distributions to sample from matrix A
-
-  start = clock();
-  LS = ls_probs(m, n, A);
-  end = clock();
-
-  rt_ls_prob = ((double)(end - start)) / CLOCKS_PER_SEC;
-
-# 2 - Building matrix C by sampling "r" rows and "c" columns from matrix A and computing SVD of matrix C
-
-  sample_C(A, m, n, r, c, row_norms, LS_prob_rows, LS_prob_columns, A_Frobenius, w, vh, sigma);
-
-  ul_approx = gsl_matrix_alloc(m, rank);
-  vl_approx = gsl_matrix_alloc(n, rank);
-  gsl_matrix_Set_zero(ul_approx);
-  gsl_matrix_set_zero(vl_approx);
-  // for l in range(rank):
-  //     ul_approx[:, l], vl_approx[:, l] =
-  for (int l = 0; l < rank; l++)
-  {
-    uvl_vector(l, A, r, w, rows, sigma, row_norms, A_Frobenius);
-  }
-  start = clock();
-  sample_me_lsyst(A, b, m, n, Nsamples, rank, r, w, rows, sigma, row_norms, LS_prob_rows, LS_prob_columns, A_Frobenius, lambdas);
-  end = clock();
-  rt_sampling_me = ((double)(end - start)) / CLOCKS_PER_SEC;
-
-    start = clock();
-
-    gsl_vector *w_vector = gsl_vector_alloc(r);
-    gsl_vector_set_zero(w_vector);
-    gsl_vector *vtmp2 = gsl_vector_alloc(r);
-
-    for (int l = 0; l < rank; l++)
-    {
-
-      gsl_matrix_get_col(vtmp2, w, l);
-      gsl_vector_scale(vtmp2, pow(lambdas[l] / sigma[l], 3));
-      gsl_vector_add(w_vector, vtmp2);
-    }
-
-    double w_norm = gsl_blas_dnrm2(w_vector);
-
-    sampled_comp = np.zeros(NcompX, dtype = np.uint32)
-
-    gsl_vector *sampled_comp = gsl_vector_alloc(NcompX);
-    gsl_vector_set_zero(sampled_comp);
 
 
-    gsl_vector *n_of_rejected_samples = gsl_vector_alloc(NcompX);
-    gsl_vector_set_zero(n_of_rejected_samples);
-
-
-
-    for (int t=0; t<NcompX; t++)
-    {
-      sampled_return_from_x =  sample_from_x(A, r, n_cols, svd_C[1], LS[0], svd_C[4], LS[3], w_vector, w_norm);
-      sample_from_x = sample_return_from_x[0];
-      n_of_rejected_samples = sample_from_x[1];
-    }
-
-    end = clock();
-
-    rt_sampling_sol = ((double)(end - start)) / CLOCKS_PER_SEC;
-
-    for t in range(NcompX):
-        x_tilde[t] = approx_solution(A, rank, r, w, svd_C[1], svd_C[2],
-                                     LS[0], LS[3], lambdas, sampled_comp[t])
-    
-
-    gsl_vector *x_tilde = gsl_Vector_alloc(NcompX);
-
-
-    for (int t=0; t<NcompX; t++)
-    {
-
-      gsl_vector_set(x_tilde,t, approx_solution(A, rank, r, w, rows, sigma, row_norms, A_Frobenius, lambdas, gsl_vector_get(sampled_comp,t));
-
-    }
-
-
-}
-
-double approx_solution(A, rank, r, w, rows, sigma, row_norms, A_Frobenius, lambdas, comp)
+double approx_solution(const gsl_matrix *A, int rank, int r, gsl_matrix *w, int* rows,gsl_vector *sigma,double row_norms[], double A_Frobenius,double* lambdas, int comp)
 {
   
-    double approx_value = 0
-    for l in range(rank):
-
-        # building the component "comp" of vector v^l
-        v_comp = 0
-        for s in range(r):
-            v_comp += A[rows[s], comp] * w[s, l] / np.sqrt( row_norms[ rows[s] ] )
-
-        v_comp = v_comp * A_Frobenius / (np.sqrt(r) * sigma[l])
-
-        # computing the approximated value for x (\tilde x)
-        approx_value += v_comp * lambdas[l] / sigma[l]**2
-
-    return approx_value
-
+    double approx_value = 0;
+    
     for (int l=0; l< rank; l++)
     {
        double v_comp=0;
 
        for (int s=0; s<r; s++)
        {
-          v_comp +=  gsl_matrix_get(A,rows[s],comp) * gsl_matrix_get(w,s,l) / np.sqrt(row_norms[rows[s]]);
+          v_comp +=  gsl_matrix_get(A,rows[s],comp) * gsl_matrix_get(w,s,l) / sqrt(row_norms[rows[s]]);
 
        }
-       v_comp = v_vomp * A_Frobenius / np.sqrt(r) * sigma[l];
+       v_comp = v_comp * A_Frobenius / sqrt(r) * gsl_vector_get(sigma,l);
 
-       approx_value += v_comp * lamdas[l] * pow(sigma[l], 2);
+       approx_value += v_comp * lambdas[l] * pow(gsl_vector_get(sigma,l), 2);
 
     }
 
@@ -163,81 +60,89 @@ double approx_solution(A, rank, r, w, rows, sigma, row_norms, A_Frobenius, lambd
 
 }
 
-void sample_from_x(const gsl_matrix *A, int r, int n, int rows, double row_norms, gsl_matrix *LS_prob_columns_R, double A_Frobenius, gsl_vector *w_vector, double w_norm)
+int* sample_from_x(const gsl_matrix *A, int r, int c, int n, int *rows, double row_norms[], gsl_matrix *LS_prob_columns_R, double A_Frobenius, gsl_vector *w_vector, double w_norm)
 {
     int keep_going = 1;
     int out_j = 0;
     int counter = 0;
-    int out_j_conter = [2];
+    int *out_j_conter = malloc(2);
     int i_sample[1];
     gsl_rng *rg = gsl_rng_alloc(gsl_rng_taus);
     int b[r];
-    int j_sample;
+    int *j_sample;
     unsigned int coin;
     for (int i=0; i<r; i++)
     {
       b[i] = i;
     }
     gsl_vector *vtmp = gsl_vector_alloc(c);
-    double R_j_norm,*Rw_dot,prob;
+    double R_j_norm,prob;
+    double *Rw_dot = (double*)malloc(1*sizeof(double));
     while (keep_going)
     {
 
         counter += 1;
-        # sample row index uniformly at random
-        i_sample = np.random.choice(r)
-        i_sample = gsl_ran_choose(rg,isample,1,b,r,sizeof(int));
+        // # sample row index uniformly at random
+        // i_sample = np.random.choice(r)
+        gsl_ran_choose(rg,i_sample,1,b,r,sizeof(int));
         //(rg, a, 1, rows, r, sizeof(int));
 
-        # sample column index from length-square distribution of corresponding row
-        gsl_matrix_get_row(vtmp, LS_prob_columns_R , i_sample);
+        // # sample column index from length-square distribution of corresponding row
+        gsl_matrix_get_row(vtmp, LS_prob_columns_R , i_sample[0]);
         j_sample = vose(vtmp,c,1);
 
-        # column j_sample of matrix R
+        // # column j_sample of matrix R
 
         gsl_vector *R_j = gsl_vector_alloc(r);
         gsl_vector_set_zero(R_j);
 
-        # compute entries of R_j
-        R_j = (A_Frobenius/np.sqrt(r)) * R_j
+        // # compute entries of R_j
+        // R_j = (A_Frobenius/sqrt(r)) * R_j
+        gsl_vector_scale(R_j,(A_Frobenius/sqrt(r)));
 
         for (int s=0; s<r; s++)
         {
-          gsl_vector_set(R_j,s,gsl_matrix_get(A,rows[s],j_sample)/sqrt(row_norms[rows[s]]));
+          gsl_vector_set(R_j,s,gsl_matrix_get(A,rows[s],j_sample[0])/sqrt(row_norms[rows[s]]));
         }
         gsl_vector_scale(R_j,A_Frobenius/sqrt(r));
 
-        # norm of column vector R_j 
+        // # norm of column vector R_j 
         R_j_norm = gsl_blas_dnrm2(R_j);
 
-        # inner product of R_j and w
-        Rw_dot = np.dot(R_j, w_vector)
+        // # inner product of R_j and w
+        // Rw_dot = np.dot(R_j, w_vector)
         gsl_blas_ddot(R_j,w_vector,Rw_dot);
 
-        # probability to select j_sample as output
+        // # probability to select j_sample as output
 
-        prob = pow(Rw_dot / w_norm * R_j_norm, 2);
+        prob = pow(*Rw_dot / w_norm * R_j_norm, 2);
 
 
-        # determine if we output j_sample given above probability
+        // # determine if we output j_sample given above probability
 
         coin = gsl_ran_binomial(rg,prob,1);
 
-        if coin == 1
-            out_j = j_sample
-            # if we get heads from coin, then stop while loop
+        if (coin == 1)
+        {
+              out_j = *j_sample;
+            
+            // # if we get heads from coin, then stop while loop
             keep_going = 0;
-    out_j_conter[0] = int(j_sample);
+        }
+    }
+    out_j_conter[0] = (out_j);
     out_j_conter[1] = counter;
     return out_j_conter;
 
 }
                   
 
-void sample_me_lsyst(const gsl_matrix *A, const gsl_vector *b, int m, int n, int samples, int rank, int r, gsl_vector *w, int *rows, gsl_vector *sigma, double row_norms[], gsl_vector *LS_prob_rows, const gsl_matrix *LS_prob_columns, double A_Frobenius, double *lambdas)
+void sample_me_lsyst(const gsl_matrix *A, const gsl_vector *b, int m, int n, int samples, int rank, int r, gsl_matrix *w, int *rows, gsl_vector *sigma, double row_norms[], gsl_vector *LS_prob_rows, const gsl_matrix *LS_prob_columns, double A_Frobenius, double *lambdas)
 {
   int reps = 10;
-  int if (reps % 2 == 0)
+  int *sample_j;
+  
+  if (reps % 2 == 0)
   {
     m = reps / 2;
   }
@@ -246,6 +151,7 @@ void sample_me_lsyst(const gsl_matrix *A, const gsl_vector *b, int m, int n, int
     m = reps / 2;
   }
   gsl_matrix *matrix_elements = gsl_matrix_alloc(reps, rank);
+  double vector_sum=0;
 
   for (int i = 0; i < reps; i++)
   {
@@ -255,80 +161,91 @@ void sample_me_lsyst(const gsl_matrix *A, const gsl_vector *b, int m, int n, int
 
       gsl_vector_set_zero(X);
 
-        for(int k=0; k<samples; 
+        for(int k=0; k<samples;k++) 
         {
         int *sample_i;
         gsl_vector *vtmp = gsl_vector_alloc(n);
 
         sample_i = vose(LS_prob_rows, m, 1);
 
-        gsl_matrix_get_row(vtmp, LS_prob_columns, *sample_i);
+        gsl_matrix_get_row(vtmp, LS_prob_columns, sample_i[0]);
 
-        sample_j = vose(LS_prob_columns, n, 1);
+        sample_j = vose(vtmp, n, 1);
 
-#calculates v_j
+// #calculates v_j
 
         int v_j = 0;
 
         for (int s = 0; s < r; s++)
         {
-              v_j+= gsl_matrix_get(rows[s],sample_j) * gsl_matrix_get(w,s,l) / (sqrt(row_norms[rows[s]]);
+              v_j+= gsl_matrix_get(A, rows[s],sample_j[0]) * gsl_matrix_get(w,s,l) / (sqrt(row_norms[rows[s]]));
         }
 
         v_j = v_j * A_Frobenius / (sqrt(r) * gsl_vector_get(sigma, l));
 
-        X[k] = ((A_Frobenius * *2 * b[sample_i]) / (A[sample_i, sample_j])) *v_j
+        // X[k] = ((A_Frobenius * *2 * b[sample_i]) / (A[sample_i, sample_j])) *v_j
 
-            double tmp = pow(A_Frobenius, 2) * gsl_vector_get(b, sample_i) / gsl_matrix_get(sample_i, sample_j) * v_j;
+        double tmp = pow(A_Frobenius, 2) * gsl_vector_get(b, *sample_i) / gsl_matrix_get(A,*sample_i, *sample_j) * v_j;
 
         gsl_vector_set(X, k, tmp);
         }
+        for (int i=0; i<samples; i++)
+        {
+          
+         vector_sum += gsl_vector_get(X,i);
+        
+        }
 
-        gsl_matrix_set(matrix_elements,i,l,(gsl_vector_sum(X)/samples));
+        gsl_matrix_set(matrix_elements,i,l,(vector_sum) / samples);
     }
   }
 
-#take median of all repeated estimates
-  double tmp1;
-  gsl_vector *vtmp = gsl_vector_alloc(reps);
-  for (int l = 0; l < rank; l++)
-  {
-    gsl_stats_median(lambdas, 1, rank);
-    gsl_matrix_get_column(vtmp, matrix_elements, l);
-    gsl_sort_vector(vtmp);
-    if (m == 0)
-      lambdas[l] = gsl_vector_get(vtmp, reps / 2);
-    else
-      lambdas[l] = (gsl_vector_get(vtmp, reps + 1 / 2) + gsl_vector_get(vtmp, reps - 1 / 2)) / 2;
-  }
+// #take median of all repeated estimates
+    // double tmp1;
+    gsl_vector *vtmp = gsl_vector_alloc(reps);
+    for (int l = 0; l < rank; l++)
+    {
+      gsl_stats_median(lambdas, 1, rank);
+      gsl_matrix_get_col(vtmp, matrix_elements, l);
+      gsl_sort_vector(vtmp);
+      if (m == 0)
+        lambdas[l] = gsl_vector_get(vtmp, reps / 2);
+      else
+        lambdas[l] = (gsl_vector_get(vtmp, reps + 1 / 2) + gsl_vector_get(vtmp, reps - 1 / 2)) / 2;
+    }
 }
 
-void uvl_vector(int m, int n, int l, const gsl_matrix *A, int r, gsl_vector *w, int *rows, gsl_vector *sigma, double row_norms[], A_Frobenius, gsl_vector *u_approx, gsl_vector *v_approx)
+void uvl_vector(int m, int n, int l, const gsl_matrix *A, int r, gsl_matrix *w, int *rows, gsl_vector *sigma, double row_norms[],double A_Frobenius, gsl_matrix *ul_approx, gsl_matrix *vl_approx)
 {
 
-#building approximated v ^ l vector
+// #building approximated v ^ l vector
   gsl_vector *tmp_vector = gsl_vector_alloc(n);
   double tmp_val;
-    factor = A_Frobenius / ( np.sqrt(r) * gsl_vector_get(sigma,l) )
-    for s in range(r):
-        v_approx[:] += ( A[rows[s], :] / np.sqrt(row_norms[rows[s]]) ) * w[s, l]
+  double factor;
+
+  factor = A_Frobenius / ( sqrt(r) * gsl_vector_get(sigma,l) );
+    // for s in range(r):
+    //     v_approx[:] += ( A[rows[s], :] / np.sqrt(row_norms[rows[s]]) ) * w[s, l]
+    gsl_vector *u_approx = gsl_vector_alloc(m);
+    gsl_vector *v_approx = gsl_vector_alloc(n);
 
     for (int s=0; s<r; s++)
     {
 
       gsl_matrix_get_row(tmp_vector, A, rows[s]);
-      tmp_val = np.sqrt(row_norms[rows[s]]) ) * gsl_matrix_get(w,s,l);
+      tmp_val = sqrt(row_norms[rows[s]]) * gsl_matrix_get(w,s,l);
       gsl_vector_scale(tmp_vector, tmp_val);
       gsl_vector_add(v_approx, tmp_vector);
     }
     gsl_vector_scale(v_approx, factor);
-
-    dgemm('N', 'N', 1, A, v_approx, 0.0, u_approx);
+    gsl_matrix_set_col(vl_approx,l,v_approx);
+    // dgemm('N', 'N', 1, A, v_approx, 0.0, u_approx);
 
     gsl_vector_scale(u_approx, 1 / gsl_vector_get(sigma, l));
+    gsl_matrix_set_col(ul_approx,l,u_approx);
 }
 
-void sample_C(const gsl_matrix *A, int m, int n, int r, int c, double row_norms[], gsl_vector *LS_prob_rows, const gsl_matrix *LS_prob_columns, double A_Frobenius, gsl_matrix *C, gsl_matrix *vh, gsl_vector *sigma)
+void sample_C(const gsl_matrix *A, int m, int n, int r, int c, int *rows, double row_norms[], gsl_vector *LS_prob_rows,const gsl_matrix *LS_prob_columns, double A_Frobenius, gsl_matrix *C, gsl_matrix *vh, gsl_vector *sigma,gsl_matrix *LS_prob_columns_R)
 {
   // int  *rows = malloc(sizeof(int)*r);
   int a[1];
@@ -345,14 +262,14 @@ void sample_C(const gsl_matrix *A, int m, int n, int r, int c, double row_norms[
   gsl_vector *column_norms = gsl_vector_alloc(r);
   gsl_vector *vtmp2 = gsl_vector_alloc(r);
   double R_row_norm;
-  gsl_matrix *LS_prob_columns_R = gsl_matrix_alloc(r, n);
+  // gsl_matrix *LS_prob_columns_R = gsl_matrix_alloc(r, n);
   // gsl_matrix *Vh = gsl_matrix_alloc (c, c);
   gsl_rng *rg = gsl_rng_alloc(gsl_rng_taus);
   // gsl_vector *S = gsl_vector_alloc(c);
-  // gsl_vector *work = gsl_vector_alloc(c);
+  gsl_vector *work = gsl_vector_alloc(c);
   start = clock();
   rows = vose(LS_prob_rows, m, r);
-
+  
   for (int i = 0; i < c; i++)
   {
 
@@ -383,13 +300,17 @@ void sample_C(const gsl_matrix *A, int m, int n, int r, int c, double row_norms[
     gsl_vector_scale(R_row, tmp);
 
     R_row_norm = pow(gsl_blas_dnrm2(R_row), 2);
+
     // printf("%f\n",R_row_norm);
+    
     gsl_vector_mul(R_row, R_row);
 
     gsl_vector_scale(R_row, 1 / R_row_norm);
 
     gsl_matrix_set_row(LS_prob_columns_R, s, R_row);
   }
+  
+
   for (int s = 0; s < r; s++)
   {
     for (int t = 0; t < c; t++)
@@ -404,30 +325,33 @@ void sample_C(const gsl_matrix *A, int m, int n, int r, int c, double row_norms[
 
     gsl_matrix_set_row(R_C, s, vtmp);
   }
+  
+ 
   gsl_vector_set_zero(column_norms);
-
+  
   for (int t = 0; t < c; t++)
   {
     for (int s = 0; s < r; s++)
     {
-      pow(gsl_matrix_get(R_C, t, s), 2);
 
-      gsl_vector_set(column_norms, t, gsl_vector_get(column_norms, t) + pow(gsl_matrix_get(R_C, t, s), 2));
+      gsl_vector_set(column_norms, t, gsl_vector_get(column_norms, t) + pow(gsl_matrix_get(R_C, s, t), 2));
     }
   }
-
   for (int t = 0; t < c; t++)
   {
-    gsl_matrix_get_col(vtmp2, C, t);
+    // gsl_matrix_get_col(vtmp2, C, t);
 
-    gsl_matrix_get_col(vtmp, R_C, t);
-
+    gsl_matrix_get_col(vtmp2, R_C, t);
+    
+  
     tmp = (A_Frobenius) / sqrt(gsl_vector_get(column_norms, t)) / sqrt(c);
 
-    gsl_vector_scale(vtmp, tmp);
+    gsl_vector_scale(vtmp2, tmp);
 
-    gsl_matrix_set_col(C, t, vtmp);
+    gsl_matrix_set_col(C, t, vtmp2);
   }
+
+ 
   end = clock();
 
   rt_building_C = ((double)(end - start)) / CLOCKS_PER_SEC;
@@ -457,6 +381,104 @@ void sample_C(const gsl_matrix *A, int m, int n, int r, int c, double row_norms[
   //   }
   // sample_me_lsyst(A, b, m, n, samples, rank, r, w, rows, sigma, row_norms, LS_prob_rows, LS_prob_columns, A_Frobenius);
 }
+void linear_eqs(const gsl_matrix *A, const gsl_vector *b, int m, int n, int r, int c, int rank, int Nsamples, int NcompX, double row_norms[], gsl_vector *LS_prob_rows, const gsl_matrix *LS_prob_columns, double A_Frobenius)
+{
+  // m_rows, n_cols = np.shape(A)
+  int *rows = malloc(sizeof(int) * r);
+  gsl_vector *sigma = gsl_vector_alloc(c);
+  gsl_matrix *vh = gsl_matrix_alloc(c, c);
+  gsl_matrix *w = gsl_matrix_alloc(r, c);
+  // gsl_vector *u_approx = gsl_vector_alloc(m);
+  // gsl_vector *v_approx = gsl_vector_alloc(n);
+  gsl_matrix *LS_prob_columns_R = gsl_matrix_alloc(r, n);
+
+  double *lambdas = (double *)calloc(rank, sizeof(double));
+  clock_t start, end;
+  double  rt_sample_me, rt_sampling_sol;
+  int *sample_return_from_x;
+  // # 1 - Generating LS probability distributions to sample from matrix A
+
+  // start = clock();
+  // LS = ls_probs(m, n, A);
+  // end = clock(); 
+
+  // rt_ls_prob = ((double)(end - start)) / CLOCKS_PER_SEC;
+
+  // # 2 - Building matrix C by sampling "r" rows and "c" columns from matrix A and computing SVD of matrix C
+  printf("Linear EQ");
+  sample_C(A, m, n, r, c, rows,row_norms, LS_prob_rows, LS_prob_columns, A_Frobenius, w, vh, sigma,LS_prob_columns_R);
+  exit(0);
+  gsl_matrix *ul_approx = gsl_matrix_alloc(m, rank);
+  gsl_matrix *vl_approx = gsl_matrix_alloc(n, rank);
+  gsl_matrix_set_zero(ul_approx);
+  gsl_matrix_set_zero(vl_approx);
+  // for l in range(rank):
+  //     ul_approx[:, l], vl_approx[:, l] =
+  for (int l = 0; l < rank; l++)
+  {
+    uvl_vector(m,n,l, A, r, w, rows, sigma, row_norms, A_Frobenius,ul_approx,vl_approx);
+  }
+  start = clock();
+  sample_me_lsyst(A, b, m, n, Nsamples, rank, r, w, rows, sigma, row_norms, LS_prob_rows, LS_prob_columns, A_Frobenius, lambdas);
+  end = clock();
+  rt_sample_me = ((double)(end - start)) / CLOCKS_PER_SEC;
+  printf("rt_svd_C %f", rt_sample_me);
+    start = clock();
+
+    gsl_vector *w_vector = gsl_vector_alloc(r);
+    gsl_vector_set_zero(w_vector);
+    gsl_vector *vtmp2 = gsl_vector_alloc(r);
+
+    for (int l = 0; l < rank; l++)
+    {
+
+      gsl_matrix_get_col(vtmp2, w, l);
+      gsl_vector_scale(vtmp2, pow(lambdas[l] / gsl_vector_get(sigma,l), 3));
+      gsl_vector_add(w_vector, vtmp2);
+    }
+
+    double w_norm = gsl_blas_dnrm2(w_vector);
+
+    // sampled_comp = np.zeros(NcompX, dtype = np.uint32)
+
+    gsl_vector *sampled_comp = gsl_vector_alloc(NcompX);
+    gsl_vector_set_zero(sampled_comp);
+
+
+    gsl_vector *no_of_rejected_samples = gsl_vector_alloc(NcompX);
+    gsl_vector_set_zero(no_of_rejected_samples);
+
+
+
+    for (int t=0; t<NcompX; t++)
+    {
+      sample_return_from_x =  sample_from_x(A, r, c, n, rows, row_norms, LS_prob_columns_R, A_Frobenius, w_vector, w_norm);
+      gsl_vector_set(sampled_comp,t,sample_return_from_x[0]);
+      gsl_vector_set(no_of_rejected_samples,t,sample_return_from_x[1]); 
+    }
+
+    end = clock();
+
+    rt_sampling_sol = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("rt_svd_C %f", rt_sampling_sol);
+    // for t in range(NcompX):
+    //     x_tilde[t] = approx_solution(A, rank, r, w, svd_C[1], svd_C[2],
+    //                                  LS[0], LS[3], lambdas, sampled_comp[t])
+    
+
+    gsl_vector *x_tilde = gsl_vector_alloc(NcompX);
+
+
+    for (int t=0; t<NcompX; t++)
+    {
+
+      gsl_vector_set(x_tilde,t, approx_solution(A, rank, r, w, rows, sigma, row_norms, A_Frobenius, lambdas, gsl_vector_get(sampled_comp,t)));
+
+    }
+ 
+
+}
+
 int main()
 {
   int m = 500, n = 250; //610, 9724
@@ -465,7 +487,7 @@ int main()
   int rank = 3;
   char *record;
 
-  char *recordb;
+  // char *recordb;
   double A_Frobenius;
   double row_norms[m];
   double LS_prob_row_tmp;
@@ -480,9 +502,10 @@ int main()
   gsl_matrix *a = gsl_matrix_alloc(m, n);
   gsl_matrix *LS_prob_columns = gsl_matrix_alloc(m, n);
   gsl_vector *v = gsl_vector_alloc(n);
-  gsl_vector *v = gsl_vector_alloc(b);
+  // gsl_vector *v = gsl_vector_alloc(b);
   gsl_vector *LS_prob_rows = gsl_vector_alloc(m);
   FILE *fstream = fopen("Data/A.csv", "r");
+  gsl_vector *b = gsl_vector_alloc(m);
   FILE *fstreamb = fopen("Data/B.csv", "r");
   srand(time(NULL));
   if (fstream == NULL)
@@ -513,7 +536,8 @@ int main()
 
   while (((readb = getline(&lineb, &lenb, fstreamb)) != -1))
   {
-    gsl_vector_set(b, atof(lineb));
+    gsl_vector_set(b,ib, atof(lineb));
+    ib++;
   }
 
   A_Frobenius = frobeniusNorm(a, m, n);
@@ -538,7 +562,7 @@ int main()
     }
   }
   // sample_C(a,m,n,r,c,row_norms,LS_prob_rows,LS_prob_columns,A_Frobenius);
-  linear_eqs(A, b, r, c, rank, Nsamples, NcompX, row_norms, LS_prob_rows, LS_prob_columns, A_Frobenius);
+  linear_eqs(a, b,m,n, r, c, rank, Nsamples, NcompX, row_norms, LS_prob_rows, LS_prob_columns, A_Frobenius);
   gsl_matrix_free(a);
   return 0;
 }
